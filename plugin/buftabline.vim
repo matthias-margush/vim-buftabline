@@ -53,7 +53,7 @@ function! buftabline#render()
 	let show_num = g:buftabline_numbers == 1
 	let show_ord = g:buftabline_numbers == 2
 	let show_mod = g:buftabline_indicators
-	let lpad     = g:buftabline_separators ? nr2char(0x23B8) : ' '
+	let lpad     = g:buftabline_separators ? nr2char(0x23B8) : ''
 
 	let bufnums = buftabline#user_buffers()
 	let centerbuf = s:centerbuf " prevent tabline jumping around when non-user buffer current (e.g. help)
@@ -73,9 +73,10 @@ function! buftabline#render()
 		if strlen(bufpath)
 			let tab.path = fnamemodify(bufpath, ':p:~:.')
 			let tab.sep = strridx(tab.path, s:dirsep, strlen(tab.path) - 2) " keep trailing dirsep
-			let tab.label = tab.path[tab.sep + 1:]
-			let pre = ( show_mod && getbufvar(bufnum, '&mod') ? '+' : '' ) . screen_num
-			let tab.pre = strlen(pre) ? pre . ' ' : ''
+			let tab.label = tab.path[tab.sep + 1:] 
+			let tab.pre = (currentbuf == bufnum)  ? '჻ ' : '  '
+			" let tab.pre = strlen(pre) ? pre . '' : ''
+			let tab.post = ' '
 			let tabs_per_tail[tab.label] = get(tabs_per_tail, tab.label, 0) + 1
 			let path_tabs += [tab]
 		elseif -1 < index(['nofile','acwrite'], getbufvar(bufnum, '&buftype')) " scratch buffer
@@ -108,7 +109,7 @@ function! buftabline#render()
 	" 2. sum the string lengths for the left and right halves
 	let currentside = lft
 	for tab in tabs
-		let tab.label = lpad . get(tab, 'pre', '') . tab.label . ' '
+		let tab.label = lpad . get(tab, 'pre', '') . tab.label . get(tab, 'post', '')
 		let tab.width = strwidth(strtrans(tab.label))
 		if centerbuf == tab.num
 			let halfwidth = tab.width / 2
@@ -145,7 +146,7 @@ function! buftabline#render()
 		endfor
 	endif
 
-	if len(tabs) | let tabs[0].label = substitute(tabs[0].label, lpad, ' ', '') | endif
+	if len(tabs) | let tabs[0].label = substitute(tabs[0].label, lpad, '', '') | endif
 
 	let swallowclicks = '%'.(1 + tabpagenr('$')).'X'
 	return swallowclicks . join(map(tabs,'printf("%%#BufTabLine%s#%s",v:val.hilite,strtrans(v:val.label))'),'') . '%#BufTabLineFill#'
